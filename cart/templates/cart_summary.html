@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block content %}
+        <!-- Header-->
+        <header class="bg-dark py-5">
+            <div class="container px-4 px-lg-5 my-5">
+                <div class="text-center text-white">
+                    <h1 class="display-4 fw-bolder">Shopping cart</h1>
+                    <p class="lead fw-normal text-white-50 mb-0">View your cart</p>
+                </div>
+            </div>
+        </header>
+
+        <br/>
+
+        <div class = "container">
+        {% if cart_products %}
+            {% for product in cart_products %}
+                <div class="card mb-3">
+                    <div class="row g-0">
+                      <div class="col-md-4">
+                        <img src="{{ product.image.url }}" class="img-fluid rounded-start" alt="...">
+                      </div>
+                      <div class="col-md-8">
+                        <div class="card-body">
+                            <center>
+                                <h5 class="card-title">{{ product.name }}</h5>
+                                <p class="card-text">{{ product.description}}</p>
+            
+                                {% if product.is_sale %}
+                                    <h6 class="card-subtitle mb-2 text-muted text-danger">Sale Price: ${{ product.sale_price }}</h6>
+                                {% else %}
+                                    <h6 class="card-subtitle mb-2 text-muted">Price: ${{ product.price }}</h6>
+                                {% endif %}
+                                <br/><br/>
+                                <div class="row justify-content-center">
+                                    <div class = "col-md-2">Quanity:</div>
+                                            <div class = "col-md-2">
+                                             
+                                            <select class="form-select form-select-sm" id ="select{{product.id}}">
+                                                
+                                             <!--  This quantity is updating as per the user adding quantity -->
+                                              
+                                                {% for key, value in quantites.items %}
+                                                 {% if key == product.id|slugify %}
+                                                    <option selected> {{ value }}</option>
+                                                 {% endif %}
+                                                {% endfor %}
+                
+                                              <option value="1">1</option>
+                                              <option value="2">2</option>
+                                              <option value="3">3</option>
+                                              <option value="4">4</option>
+                                              <option value="5">5</option>
+                                              <option value="6">6</option>
+                                            </select>
+                                            </div>
+                                            </div>
+                                    <br/><br/>
+
+            
+            
+                                <a href="{% url 'home' %}" class="btn btn-secondary"
+                                    >Home</button></a>
+
+                                <!-- Button to remove item from cart  : class name: update-cart -->
+                                <button type="button" data-index="{{product.id}}"
+                                class = "btn btn-secondary update-cart">Update</button>
+                                <!-- Button to remove items from cart -->
+                                <button type="button" data-index="{{product.id}}"
+                                class = "btn btn-danger delete-cart">Remove</button>
+                               
+                            
+                            </center>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+            {% endfor %}
+            <!-- total of cart -->
+             <div class="card mb-3">
+                <div class="row g-0">
+                  <div class="col-md-12">
+                    <div class="card-body">
+                        <center>
+                            <h5 class="card-title">Total: ${{ totals }}</h5>
+                            <a href="{% url 'checkout' %}" class = "btn btn-success">Checkout</a>
+                        </center>
+                    </div>
+                  </div>
+                </div>
+              </div>
+        {% else %}
+        <div class="alert alert-warning" role="alert">
+            Your cart is empty.
+            </div>
+        {% endif %}
+
+
+
+
+<!-- JavaScript code to update the cart when user selects a different quantity -->
+<!-- this time we are not using any function , thats why we dont need # , As we use class we directly write class name with period .upate-cart -->
+<script>
+    // update Cart
+    $(document).on('click', '.update-cart', function(e) {
+        e.preventDefault();
+        // grab the product id
+        var productid = $(this).data('index');
+        $.ajax({
+            type: 'POST',
+            url : "{% url 'cart_update' %}",// url pattern , here the response go when we hit the button
+            data: {
+                product_id: $(this).data('index'), 
+                product_qty: $('#select' + productid + ' option:selected').val(), // Use .val() for the value
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                action: 'post'
+            },
+            success: function(json) {
+                // Update the cart quantity in the UI
+                //document.getElementById("cart_quantity").textContent = json.qty;
+                location.reload();
+            },
+            error: function(xhr, errmsg, err) {
+                console.log(xhr.status + ": " + xhr.responseText);
+            }
+        });
+    });
+
+
+
+    // delete item from Cart
+    $(document).on('click', '.delete-cart', function(e) {
+        e.preventDefault();
+        // grab the product id
+        // var productid = $(this).data('index');
+        $.ajax({
+            type: 'POST',
+            url : "{% url 'cart_delete' %}",// url pattern , here the response go when we hit the button
+            data: {
+                product_id: $(this).data('index'), 
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                action: 'post'
+            },
+            success: function(json) {
+                // Update the cart quantity in the UI
+                //document.getElementById("cart_quantity").textContent = json.qty;
+                location.reload();
+            },
+            error: function(xhr, errmsg, err) {
+                console.log(xhr.status + ": " + xhr.responseText);
+            }
+        });
+    });
+
+</script>
+
+{% endblock %}
